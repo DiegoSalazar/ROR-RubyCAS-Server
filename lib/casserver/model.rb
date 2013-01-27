@@ -31,34 +31,42 @@ module CASServer::Model
     end
   end
 
-  class Base < ActiveRecord::Base
-  end
-
-  class Ticket < Base
+  module Ticket
     def to_s
       ticket
     end
+    
+    def self.included(mod)
+      mod.extend(ClassMethods)
+    end
 
-    def self.cleanup(max_lifetime)
-      transaction do
-        conditions = ["created_on < ?", Time.now - max_lifetime]
-        expired_tickets_count = count(:conditions => conditions)
+    module ClassMethods
+      def cleanup(max_lifetime)
+        transaction do
+          conditions = ["created_on < ?", Time.now - max_lifetime]
+          expired_tickets_count = count(:conditions => conditions)
 
-        $LOG.debug("Destroying #{expired_tickets_count} expired #{self.name.demodulize}"+
-          "#{'s' if expired_tickets_count > 1}.") if expired_tickets_count > 0
+          $LOG.debug("Destroying #{expired_tickets_count} expired #{self.name.demodulize}"+
+            "#{'s' if expired_tickets_count > 1}.") if expired_tickets_count > 0
 
-        destroy_all(conditions)
+          destroy_all(conditions)
+        end
       end
     end
   end
-
-  class LoginTicket < Ticket
-    set_table_name 'casserver_lt'
+  
+  class Base < ActiveRecord::Base
+  end
+  
+  class LoginTicket < ActiveRecord::Base
+    self.table_name = 'casserver_lt'
+    include Ticket
     include Consumable
   end
 
-  class ServiceTicket < Ticket
-    set_table_name 'casserver_st'
+  class ServiceTicket < ActiveRecord::Base
+    self.table_name = 'casserver_st'
+    include Ticket
     include Consumable
 
     belongs_to :granted_by_tgt,
@@ -79,8 +87,9 @@ module CASServer::Model
       :foreign_key => :granted_by_pgt_id
   end
 
-  class TicketGrantingTicket < Ticket
-    set_table_name 'casserver_tgt'
+  class TicketGrantingTicket < ActiveRecord::Base
+    self.table_name = 'casserver_tgt'
+    include Ticket
 
     serialize :extra_attributes
 
@@ -89,8 +98,10 @@ module CASServer::Model
       :foreign_key => :granted_by_tgt_id
   end
 
-  class ProxyGrantingTicket < Ticket
-    set_table_name 'casserver_pgt'
+  class ProxyGrantingTicket < ActiveRecord::Base
+    self.table_name = 'casserver_pgt'
+    include Ticket
+    
     belongs_to :service_ticket
     has_many :granted_proxy_tickets,
       :class_name => 'CASServer::Model::ProxyTicket',
