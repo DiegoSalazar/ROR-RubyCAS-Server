@@ -1,5 +1,4 @@
-
-$gemspec = Gem::Specification.new do |s|
+Gem::Specification.new do |s|
   s.name     = 'ror-rubycas-server'
   s.version  = '1.0.d'
   s.authors  = ["Matt Zukowski", "Christopher Small"]
