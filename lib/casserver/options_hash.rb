@@ -9,13 +9,13 @@ class OptionsHash < HashWithIndifferentAccess
 	
 	def load_config file
 		load file do |file|
-			merge! HashWithIndifferentAccess.new(YAML.load file )[@environment]
+			merge! HashWithIndifferentAccess.new(YAML.load ERB.new(file).result )[@environment]
 		end
 	end
 	
 	def load_database_config file
 		load file do |file|
-			self[:database] = HashWithIndifferentAccess.new(YAML.load file )[@environment]
+			self[:database] = HashWithIndifferentAccess.new(YAML.load ERB.new(file).result )[@environment]
 		end
 	end
 	
